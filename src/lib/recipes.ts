@@ -4,83 +4,53 @@ export type Recipe = {
   thumb: string;
 };
 
-const mealIdPattern = /^[1-9]\d{0,19}$/;
+export const recipes: Recipe[] = [
+  {
+    id: "lemon-pasta",
+    name: "Creamy Lemon Pasta",
+    thumb:
+      "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    id: "avocado-toast",
+    name: "Avocado Toast with Herbs",
+    thumb:
+      "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    id: "tomato-soup",
+    name: "Roasted Tomato Soup",
+    thumb:
+      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    id: "chickpea-curry",
+    name: "Chickpea Coconut Curry",
+    thumb:
+      "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    id: "green-salad",
+    name: "Crispy Green Goddess Salad",
+    thumb:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    id: "pancakes",
+    name: "Fluffy Buttermilk Pancakes",
+    thumb:
+      "https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=900&q=80",
+  },
+];
 
-export function isMealId(value: unknown): value is string {
-  return typeof value === "string" && mealIdPattern.test(value);
-}
+export function searchRecipes(query: string): Recipe[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseRecipe(value: unknown): Recipe {
-  if (
-    !isRecord(value) ||
-    !isMealId(value.idMeal) ||
-    typeof value.strMeal !== "string" ||
-    typeof value.strMealThumb !== "string" ||
-    !value.strMealThumb.startsWith("https://")
-  ) {
-    throw new Error("The recipe service returned an invalid meal.");
-  }
-
-  return {
-    id: value.idMeal,
-    name: value.strMeal,
-    thumb: value.strMealThumb,
-  };
-}
-
-async function fetchMeals(url: string, revalidate: number): Promise<Recipe[]> {
-  const response = await fetch(url, { next: { revalidate } });
-
-  if (!response.ok) {
-    throw new Error(`The recipe service returned status ${response.status}.`);
-  }
-
-  const data: unknown = await response.json();
-  if (!isRecord(data) || !(data.meals === null || Array.isArray(data.meals))) {
-    throw new Error("The recipe service returned an invalid response.");
-  }
-
-  return data.meals === null ? [] : data.meals.map(parseRecipe);
-}
-
-export async function searchMeals(query: string): Promise<Recipe[]> {
-  const normalizedQuery = query.trim();
   if (normalizedQuery.length < 2) {
     return [];
   }
 
-  return fetchMeals(
-    `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(normalizedQuery)}`,
-    3600,
+  return recipes.filter((recipe) =>
+    recipe.name.toLocaleLowerCase().includes(normalizedQuery),
   );
-}
-
-export async function getMealById(id: string): Promise<Recipe | null> {
-  if (!isMealId(id)) {
-    throw new Error("A valid meal ID is required.");
-  }
-
-  const meals = await fetchMeals(
-    `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${encodeURIComponent(id)}`,
-    3600,
-  );
-  return meals[0] ?? null;
-}
-
-export async function getRandomMeal(): Promise<Recipe> {
-  const meals = await fetchMeals(
-    "https://www.themealdb.com/api/json/v1/1/random.php",
-    0,
-  );
-  const meal = meals[0];
-
-  if (!meal) {
-    throw new Error("The recipe service did not return a random meal.");
-  }
-
-  return meal;
 }

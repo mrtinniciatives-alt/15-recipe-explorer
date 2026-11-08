@@ -31,12 +31,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             >
               Recipe Explorer
             </Link>
-            <Link
-              className="shrink-0 text-sm font-semibold text-emerald-800 hover:text-emerald-600"
-              href="/favourites"
-            >
-              Favourites
-            </Link>
             <HeaderSearch />
           </nav>
         </header>

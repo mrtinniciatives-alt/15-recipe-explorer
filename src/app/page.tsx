@@ -1,19 +1,8 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 
-import { FAVOURITES_COOKIE, parseFavouriteIds } from "@/lib/favourites";
-import { searchMeals } from "@/lib/recipes";
-import RandomRecipeButton from "./components/random-recipe-button";
-import RecipeCard from "./components/recipe-card";
+import { recipes } from "@/lib/recipes";
 
-export default async function Home() {
-  const [recipes, cookieStore] = await Promise.all([
-    searchMeals("pasta"),
-    cookies(),
-  ]);
-  const favouriteIds = new Set(
-    parseFavouriteIds(cookieStore.get(FAVOURITES_COOKIE)?.value),
-  );
+export default function Home() {
   const featuredRecipes = recipes.slice(0, 3);
 
   return (
@@ -35,7 +24,6 @@ export default async function Home() {
         >
           Explore recipes
         </Link>
-        <RandomRecipeButton />
       </section>
 
       <section className="py-14">
@@ -55,21 +43,25 @@ export default async function Home() {
             Browse all recipes
           </Link>
         </div>
-        {featuredRecipes.length > 0 ? (
-          <ul className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-3">
           {featuredRecipes.map((recipe) => (
-            <RecipeCard
-              isFavourite={favouriteIds.has(recipe.id)}
+            <Link
+              className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
+              href={`/search?q=${encodeURIComponent(recipe.name)}`}
               key={recipe.id}
-              recipe={recipe}
-            />
+            >
+              <div
+                aria-label={recipe.name}
+                className="h-48 bg-cover bg-center"
+                role="img"
+                style={{ backgroundImage: `url("${recipe.thumb}")` }}
+              />
+              <h3 className="px-5 py-4 font-semibold text-zinc-900 group-hover:text-emerald-800">
+                {recipe.name}
+              </h3>
+            </Link>
           ))}
-          </ul>
-        ) : (
-          <p className="text-zinc-600">
-            No recipes are available right now. Try the search page again soon.
-          </p>
-        )}
+        </div>
       </section>
     </main>
   );

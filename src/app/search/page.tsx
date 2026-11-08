@@ -1,10 +1,7 @@
 import Image from "next/image";
-import { cookies } from "next/headers";
 
 import SearchBox from "./search-box";
-import FavouriteButton from "@/app/components/favourite-button";
-import { FAVOURITES_COOKIE, parseFavouriteIds } from "@/lib/favourites";
-import { searchMeals } from "@/lib/recipes";
+import { searchRecipes } from "@/lib/recipes";
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string | string[] }>;
@@ -15,13 +12,7 @@ export default async function SearchPage({
 }: SearchPageProps) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
-  const [results, cookieStore] = await Promise.all([
-    searchMeals(query),
-    cookies(),
-  ]);
-  const favouriteIds = new Set(
-    parseFavouriteIds(cookieStore.get(FAVOURITES_COOKIE)?.value),
-  );
+  const results = searchRecipes(query);
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 lg:px-12">
@@ -33,7 +24,7 @@ export default async function SearchPage({
           Find something delicious
         </h1>
         <p className="mt-3 text-zinc-600">
-          Search recipes by name, then save the ones you want to make later.
+          Search by recipe name, then copy the URL to share your results.
         </p>
         <SearchBox initialQuery={query} />
       </div>
@@ -67,13 +58,9 @@ export default async function SearchPage({
                   unoptimized
                   width={900}
                 />
-                <div className="flex items-center justify-between gap-3 px-5 py-4">
-                  <h3 className="font-semibold text-zinc-900">{recipe.name}</h3>
-                  <FavouriteButton
-                    initiallyFavourite={favouriteIds.has(recipe.id)}
-                    mealId={recipe.id}
-                  />
-                </div>
+                <h3 className="px-5 py-4 font-semibold text-zinc-900">
+                  {recipe.name}
+                </h3>
               </li>
             ))}
           </ul>

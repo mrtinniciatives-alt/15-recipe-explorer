@@ -1,23 +1,18 @@
 import Image from "next/image";
-import { Suspense } from "react";
-import { cookies } from "next/headers";
 
-import FavouriteButton from "../components/favourite-button";
 import SearchBox from "./search-box";
-import { FAVOURITES_COOKIE, parseFavouriteIds } from "@/lib/favourites";
-import { searchMeals } from "@/lib/meals";
+import { searchRecipes } from "@/lib/recipes";
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string | string[] }>;
 };
 
-async function SearchResults({ searchParams }: SearchPageProps) {
-  const [params, cookieStore] = await Promise.all([searchParams, cookies()]);
+export default async function SearchPage({
+  searchParams,
+}: SearchPageProps) {
+  const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
-  const favourites = parseFavouriteIds(
-    cookieStore.get(FAVOURITES_COOKIE)?.value,
-  );
-  const meals = query.length >= 2 ? await searchMeals(query) : [];
+  const results = searchRecipes(query);
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 lg:px-12">
@@ -29,7 +24,7 @@ async function SearchResults({ searchParams }: SearchPageProps) {
           Find something delicious
         </h1>
         <p className="mt-3 text-zinc-600">
-          Search recipes from TheMealDB and save the ones you want to make.
+          Search by recipe name, then copy the URL to share your results.
         </p>
         <SearchBox initialQuery={query} />
       </div>
@@ -37,62 +32,40 @@ async function SearchResults({ searchParams }: SearchPageProps) {
       <section aria-live="polite" className="mt-12">
         <h2 className="text-xl font-semibold text-zinc-900">
           {query.length >= 2
-            ? `${meals.length} ${meals.length === 1 ? "result" : "results"} for “${query}”`
+            ? `${results.length} ${results.length === 1 ? "result" : "results"} for “${query}”`
             : "Try searching for a recipe"}
         </h2>
         {query.length < 2 ? (
           <p className="mt-3 text-zinc-600">
             Enter at least two characters to see matching recipes.
           </p>
-        ) : meals.length === 0 ? (
+        ) : results.length === 0 ? (
           <p className="mt-3 text-zinc-600">
-            No recipes matched. Try a different dish or ingredient.
+            No recipes matched. Try a different ingredient or dish.
           </p>
         ) : (
           <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {meals.map((meal) => (
+            {results.map((recipe) => (
               <li
                 className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-                key={meal.idMeal}
+                key={recipe.id}
               >
                 <Image
-                  alt={meal.strMeal}
+                  alt={recipe.name}
                   className="h-52 w-full object-cover"
                   height={600}
-                  src={meal.strMealThumb}
+                  src={recipe.thumb}
                   unoptimized
                   width={900}
                 />
-                <div className="space-y-3 p-5">
-                  <h3 className="font-semibold text-zinc-900">
-                    {meal.strMeal}
-                  </h3>
-                  <FavouriteButton
-                    initialFavourite={favourites.includes(meal.idMeal)}
-                    mealId={meal.idMeal}
-                  />
-                </div>
+                <h3 className="px-5 py-4 font-semibold text-zinc-900">
+                  {recipe.name}
+                </h3>
               </li>
             ))}
           </ul>
         )}
       </section>
     </main>
-  );
-}
-
-function SearchFallback() {
-  return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 lg:px-12">
-      <p className="text-zinc-600">Loading recipes…</p>
-    </main>
-  );
-}
-
-export default function SearchPage(props: SearchPageProps) {
-  return (
-    <Suspense fallback={<SearchFallback />}>
-      <SearchResults searchParams={props.searchParams} />
-    </Suspense>
   );
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import RandomRecipeButton from "./components/random-recipe-button";
 import { recipes } from "@/lib/recipes";
 
 export default function Home() {
@@ -25,7 +24,6 @@ export default function Home() {
         >
           Explore recipes
         </Link>
-        <RandomRecipeButton />
       </section>
 
       <section className="py-14">

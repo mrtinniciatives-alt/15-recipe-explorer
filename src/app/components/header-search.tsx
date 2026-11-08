@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 
-import type { Meal } from "@/lib/meals";
+import type { Recipe } from "@/lib/recipes";
 
 export default function HeaderSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Meal[]>([]);
+  const [results, setResults] = useState<Recipe[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +39,7 @@ export default function HeaderSearch() {
           throw new Error(`Search request failed with status ${response.status}`);
         }
 
-        const data: { results: Meal[] } = await response.json();
+        const data: { results: Recipe[] } = await response.json();
         setResults(data.results);
         setActiveIndex(-1);
         setIsOpen(true);
@@ -78,7 +78,7 @@ export default function HeaderSearch() {
     } else if (event.key === "Enter") {
       event.preventDefault();
       navigateToSearch(
-        activeIndex >= 0 ? results[activeIndex].strMeal : query,
+        activeIndex >= 0 ? results[activeIndex].name : query,
       );
     } else if (event.key === "Escape") {
       setIsOpen(false);
@@ -91,9 +91,7 @@ export default function HeaderSearch() {
       className="relative w-full max-w-md"
       onSubmit={(event) => {
         event.preventDefault();
-        navigateToSearch(
-          activeIndex >= 0 ? results[activeIndex].strMeal : query,
-        );
+        navigateToSearch(activeIndex >= 0 ? results[activeIndex].name : query);
       }}
     >
       <label className="sr-only" htmlFor="header-recipe-search">
@@ -101,9 +99,7 @@ export default function HeaderSearch() {
       </label>
       <input
         aria-activedescendant={
-          activeIndex >= 0
-            ? `recipe-suggestion-${results[activeIndex].idMeal}`
-            : undefined
+          activeIndex >= 0 ? `recipe-suggestion-${results[activeIndex].id}` : undefined
         }
         aria-autocomplete="list"
         aria-controls="recipe-suggestions"
@@ -157,29 +153,25 @@ export default function HeaderSearch() {
             <li className="px-4 py-3 text-sm text-red-700">{error}</li>
           ) : (
             results.map((recipe, index) => (
-              <li
-                key={recipe.idMeal}
-                role="option"
-                aria-selected={index === activeIndex}
-              >
+              <li key={recipe.id} role="option" aria-selected={index === activeIndex}>
                 <button
                   className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-zinc-800 ${
                     index === activeIndex ? "bg-emerald-50" : "hover:bg-zinc-50"
                   }`}
-                  id={`recipe-suggestion-${recipe.idMeal}`}
+                  id={`recipe-suggestion-${recipe.id}`}
                   onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => navigateToSearch(recipe.strMeal)}
+                  onClick={() => navigateToSearch(recipe.name)}
                   type="button"
                 >
                   <Image
                     alt=""
                     className="h-10 w-12 rounded-lg object-cover"
                     height={80}
-                    src={recipe.strMealThumb}
+                    src={recipe.thumb}
                     unoptimized
                     width={96}
                   />
-                  <span>{recipe.strMeal}</span>
+                  <span>{recipe.name}</span>
                 </button>
               </li>
             ))

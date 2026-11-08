@@ -1,61 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Recipe Explorer
 
-## Getting Started
+Recipe Explorer searches TheMealDB, lets you save recipes, and can suggest a
+random meal. It is built with Next.js 16, React 19, and Tailwind CSS.
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). No API key or environment
+variables are required; recipe data comes from TheMealDB's public API.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Search meals by name at `/search?q=pasta`; the header offers live suggestions.
+- Save and remove meals with the heart button. Favourites are stored as a
+  validated JSON array of up to 50 meal IDs in the `recipe-favourites` httpOnly
+  cookie, so they are private to the current browser and are not shared across
+  devices.
+- Visit `/favourites` to load saved meal details in parallel.
+- Choose **Surprise me** to look up a fresh meal through
+  `https://www.themealdb.com/api/json/v1/1/random.php`. The random lookup is not
+  cached.
 
-## Recipe search
+## Data access
 
-Visit `/search?q=pasta` to open a shareable recipe search. The page reads its
-query on the server, and its search box replaces the URL after a 300 ms pause
-while showing a pending indicator during navigation. The header autocomplete
-uses `GET /api/search?q=...`; it requires at least two characters and caches
-successful responses briefly.
+- `src/lib/meals.ts` validates TheMealDB responses and contains the server-side
+  meal lookup helpers.
+- `src/app/api/search/route.ts` supports the header autocomplete.
+- `src/app/api/random/route.ts` returns an uncached random meal.
+- Search results and `/favourites` fetch data directly from Server Components.
+- `src/app/favourites/actions.ts` validates IDs and updates the httpOnly cookie.
+  The heart button uses `useOptimistic` so its state responds immediately.
 
-The recipes in this starter are a small in-memory sample in `src/lib/recipes.ts`.
-Replace that catalog and its search function with your own data source as the
-app grows.
+## Rendering
 
-### Choosing a data access pattern
+The app enables Next.js Cache Components and Partial Prerendering. The home
+page has a static shell; `/search` and `/favourites` place request-specific
+content behind Suspense boundaries. The favourites page reads a request cookie,
+and search reads query parameters, so those results are rendered at request
+time while their fallback shells can be prerendered. `next build` reports the
+actual route markers for this Next.js version.
 
-- **Route Handler** (`src/app/api/search/route.ts`): use one when clients need
-  an HTTP endpoint, such as the header autocomplete, or when external consumers
-  need a stable API contract. It can validate requests and set response headers.
-- **Server Component**: query data directly from the server component when it
-  is only needed to render that page. It avoids an unnecessary browser-to-your-
-  own-API-to-data-source round trip; the search results page uses this pattern.
-- **Server Action**: use for mutations initiated by the UI, such as saving a
-  recipe or submitting a form. Actions provide a server-side call path for
-  writes and can revalidate affected UI; they are not a replacement for a
-  reusable, cacheable GET API.
+## Validate and build
 
-## Learn More
+```bash
+npm run lint
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy to Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Connect this repository to a Vercel project or use the Vercel CLI:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+vercel
+vercel --prod
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+No secrets or environment variables need to be configured for the public
+TheMealDB API.

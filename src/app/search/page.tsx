@@ -1,21 +1,43 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
 
 import SearchBox from "./search-box";
-import { searchRecipes } from "@/lib/recipes";
+import FavouriteButton from "../components/favourite-button";
+import { FAVOURITES_COOKIE, parseFavouriteIds } from "@/lib/favourites";
+import { searchMeals } from "@/lib/meals";
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string | string[] }>;
 };
 
-export default async function SearchPage({
-  searchParams,
-}: SearchPageProps) {
-  const params = await searchParams;
-  const query = typeof params.q === "string" ? params.q.trim() : "";
-  const results = searchRecipes(query);
-
+export default function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 lg:px-12">
+      <Suspense
+        fallback={
+          <p aria-live="polite" className="text-zinc-600">
+            Loading recipes…
+          </p>
+        }
+      >
+        <SearchResults searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+async function SearchResults({ searchParams }: SearchPageProps) {
+  const params = await searchParams;
+  const query = typeof params.q === "string" ? params.q.trim() : "";
+  const cookieStore = await cookies();
+  const favouriteIds = new Set(
+    parseFavouriteIds(cookieStore.get(FAVOURITES_COOKIE)?.value),
+  );
+  const results = query.length >= 2 ? await searchMeals(query) : [];
+
+  return (
+    <>
       <div className="max-w-2xl">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">
           Recipe search
@@ -26,7 +48,7 @@ export default async function SearchPage({
         <p className="mt-3 text-zinc-600">
           Search by recipe name, then copy the URL to share your results.
         </p>
-        <SearchBox initialQuery={query} />
+        <SearchBox initialQuery={query} key={query} />
       </div>
 
       <section aria-live="polite" className="mt-12">
@@ -45,27 +67,33 @@ export default async function SearchPage({
           </p>
         ) : (
           <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((recipe) => (
+            {results.map((meal) => (
               <li
                 className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-                key={recipe.id}
+                key={meal.idMeal}
               >
                 <Image
-                  alt={recipe.name}
+                  alt={meal.strMeal}
                   className="h-52 w-full object-cover"
                   height={600}
-                  src={recipe.thumb}
+                  src={meal.strMealThumb}
                   unoptimized
                   width={900}
                 />
-                <h3 className="px-5 py-4 font-semibold text-zinc-900">
-                  {recipe.name}
-                </h3>
+                <div className="flex items-center justify-between gap-4 px-5 py-4">
+                  <h3 className="font-semibold text-zinc-900">
+                    {meal.strMeal}
+                  </h3>
+                  <FavouriteButton
+                    initialIsFavourite={favouriteIds.has(meal.idMeal)}
+                    mealId={meal.idMeal}
+                  />
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
-    </main>
+    </>
   );
 }

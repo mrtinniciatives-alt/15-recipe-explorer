@@ -13,10 +13,6 @@ export default function SearchBox({ initialQuery }: SearchBoxProps) {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
-
-  useEffect(() => {
     const timeout = window.setTimeout(() => {
       const nextUrl = query.trim()
         ? `/search?q=${encodeURIComponent(query.trim())}`

@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
+import RandomRecipeButton from "./components/random-recipe-button";
 
-import { recipes } from "@/lib/recipes";
+import { searchMeals } from "@/lib/meals";
 
-export default function Home() {
-  const featuredRecipes = recipes.slice(0, 3);
+export default async function Home() {
+  const featuredMeals = (await searchMeals("chicken")).slice(0, 3);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-16 sm:px-10 lg:px-12">
@@ -24,6 +26,7 @@ export default function Home() {
         >
           Explore recipes
         </Link>
+        <RandomRecipeButton />
       </section>
 
       <section className="py-14">
@@ -44,20 +47,22 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">
-          {featuredRecipes.map((recipe) => (
+          {featuredMeals.map((meal) => (
             <Link
               className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
-              href={`/search?q=${encodeURIComponent(recipe.name)}`}
-              key={recipe.id}
+              href={`/search?q=${encodeURIComponent(meal.strMeal)}`}
+              key={meal.idMeal}
             >
-              <div
-                aria-label={recipe.name}
-                className="h-48 bg-cover bg-center"
-                role="img"
-                style={{ backgroundImage: `url("${recipe.thumb}")` }}
+              <Image
+                alt={meal.strMeal}
+                className="h-48 w-full object-cover"
+                height={400}
+                src={meal.strMealThumb}
+                unoptimized
+                width={600}
               />
               <h3 className="px-5 py-4 font-semibold text-zinc-900 group-hover:text-emerald-800">
-                {recipe.name}
+                {meal.strMeal}
               </h3>
             </Link>
           ))}

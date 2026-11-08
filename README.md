@@ -1,44 +1,59 @@
 # Project Tracker
 
-Project Tracker is a Next.js App Router application that reads project and task
-data from Neon Postgres.
+A Next.js App Router project and task tracker backed by Neon Postgres.
 
-## Run locally
+## Features
 
-Use Node.js 20 or later, install dependencies, and add your Neon connection
-string to `.env.local`:
+- View projects with their color, description, task totals, and completion progress.
+- Create projects and tasks; update task status or delete tasks and projects.
+- Manage tasks on a three-column Kanban board with optimistic status moves.
+- Filter a project's tasks by priority and title using URL search parameters.
+- Review overall totals, task status and priority charts, overdue tasks, and per-project completion at `/stats`.
+- Validate form input with Zod and use parameterized SQL for database operations.
 
-```env
-DATABASE_URL=postgresql://<user>:<password>@<host>/<database>?sslmode=require
-```
+## Stack
 
-Then start the development server:
+- Next.js 16 App Router and React 19 Server and Client Components
+- TypeScript and Tailwind CSS
+- Neon Postgres with `@neondatabase/serverless`
+- Zod for input validation and database result validation
 
-```bash
-npm install
-npm run dev
-```
+## Architecture
 
-Open [http://localhost:3000](http://localhost:3000). The app shows projects with
-their descriptions, color accents, and completed-task progress. Create projects
-from the home page, then open a project to add, update, and delete tasks.
+- **Reads:** Server Components call typed functions in `src/lib/queries.ts`, which run parameterized tagged-template queries through the server-only Neon client in `src/lib/db.ts`.
+- **Writes:** Client forms and board controls call Server Actions in `src/app/actions.ts`. Actions validate their `FormData` with Zod, perform parameterized SQL mutations, and revalidate affected routes.
+- **Database:** `database/migrations/001_create_projects_and_tasks.sql` defines the schema and sample records. Apply it once to a new database.
 
-## Database setup
+Neon's tagged-template interpolations are sent as SQL parameters, separate from the query text. User-provided values therefore remain values rather than being parsed as SQL. Keep SQL structure and identifiers fixed; interpolate data values using the `sql\`...\`` template.
 
-Apply [`database/migrations/001_create_projects_and_tasks.sql`](./database/migrations/001_create_projects_and_tasks.sql)
-to your Neon database before opening the app. It creates the projects and tasks
-tables and inserts sample rows.
+## Setup
 
-The database connection is server-only and throws a clear error if
-`DATABASE_URL` is missing. Queries use Neon tagged-template SQL; interpolated
-values are sent as parameters separate from the SQL text rather than
-concatenated into a query. This prevents user-supplied values from being
-interpreted as SQL. Keep query structure and identifiers fixed, and pass
-variable values through the template interpolations.
+1. Create a Neon project and database. In the Neon dashboard, copy the connection string for the database.
+2. Copy `.env.example` to `.env.local` and set `DATABASE_URL` to that connection string. Never commit `.env.local`.
 
-Form submissions are validated on the server with Zod before any mutation.
-Task status changes and deletions match both the task ID and its project ID in
-the SQL `WHERE` clause.
+   PowerShell:
+
+   ```powershell
+   Copy-Item .env.example .env.local
+   ```
+
+3. Run `database/migrations/001_create_projects_and_tasks.sql` once in the Neon SQL Editor. It creates the tables and inserts two sample projects and three tasks.
+4. Install dependencies and start the app:
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000).
+
+For Vercel, add `DATABASE_URL` to the project's Environment Variables for the environments you deploy, then deploy the app.
+
+## Schema overview
+
+- `projects`: serial primary key, required name (2–80 characters), description, hex color, and creation timestamp.
+- `tasks`: serial primary key, required project foreign key with cascading delete, required title (2–140 characters), status (`todo`, `doing`, or `done`), priority (`low`, `medium`, or `high`), optional due date, and creation timestamp.
+- An index on `tasks.project_id` supports project task lookups.
 
 ## Checks
 

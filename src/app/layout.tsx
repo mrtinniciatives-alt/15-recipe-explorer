@@ -31,6 +31,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             >
               Project Tracker
             </Link>
+            <Link
+              className="ml-auto rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
+              href="/stats"
+            >
+              Stats
+            </Link>
           </nav>
         </header>
         <div className="flex flex-1 flex-col">{children}</div>

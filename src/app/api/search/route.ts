@@ -1,10 +1,10 @@
-import { searchRecipes } from "@/lib/recipes";
+import { searchMeals } from "@/lib/recipes";
 
 const cacheHeaders = {
   "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
 };
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
 
   if (query.length < 2) {
@@ -17,8 +17,6 @@ export function GET(request: Request) {
     );
   }
 
-  return Response.json(
-    { results: searchRecipes(query) },
-    { headers: cacheHeaders },
-  );
+  const results = await searchMeals(query);
+  return Response.json({ results }, { headers: cacheHeaders });
 }

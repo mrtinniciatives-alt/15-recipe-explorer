@@ -1,72 +1,101 @@
-import Image from "next/image";
 import Link from "next/link";
-import RandomRecipeButton from "./components/random-recipe-button";
-
-import { searchMeals } from "@/lib/meals";
+import ProjectForm from "@/app/components/project-form";
+import { getProjects } from "@/lib/queries";
 
 export default async function Home() {
-  const featuredMeals = (await searchMeals("chicken")).slice(0, 3);
+  const projects = await getProjects();
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-16 sm:px-10 lg:px-12">
-      <section className="rounded-3xl bg-emerald-950 px-8 py-14 text-white sm:px-14 sm:py-20">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
-          Find your next favorite
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:px-10 sm:py-16 lg:px-12">
+      <section className="mb-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-600">
+          Workspace
         </p>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl">
-          Good food starts with a little inspiration.
-        </h1>
-        <p className="mt-5 max-w-xl text-lg leading-8 text-emerald-100">
-          Search quick weeknight dinners, comforting classics, and fresh ideas
-          for whatever is in your kitchen.
-        </p>
-        <Link
-          className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-semibold text-emerald-950 transition hover:bg-emerald-100"
-          href="/search"
-        >
-          Explore recipes
-        </Link>
-        <RandomRecipeButton />
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl">
+              Your projects
+            </h1>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-zinc-600">
+              Keep work organized and see how each project is progressing.
+            </p>
+          </div>
+          <p className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700">
+            {projects.length} {projects.length === 1 ? "project" : "projects"}
+          </p>
+        </div>
       </section>
 
-      <section className="py-14">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">
-              A few ideas
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-              Popular right now
-            </h2>
-          </div>
-          <Link
-            className="text-sm font-semibold text-emerald-800 hover:text-emerald-600"
-            href="/search?q=pasta"
-          >
-            Browse all recipes
-          </Link>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-3">
-          {featuredMeals.map((meal) => (
-            <Link
-              className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
-              href={`/search?q=${encodeURIComponent(meal.strMeal)}`}
-              key={meal.idMeal}
-            >
-              <Image
-                alt={meal.strMeal}
-                className="h-48 w-full object-cover"
-                height={400}
-                src={meal.strMealThumb}
-                unoptimized
-                width={600}
-              />
-              <h3 className="px-5 py-4 font-semibold text-zinc-900 group-hover:text-emerald-800">
-                {meal.strMeal}
-              </h3>
-            </Link>
-          ))}
-        </div>
+      {projects.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center">
+          <h2 className="text-lg font-semibold text-zinc-900">No projects yet</h2>
+          <p className="mt-2 text-sm text-zinc-600">
+            Projects will appear here once they have been added to your database.
+          </p>
+        </section>
+      ) : (
+        <section
+          aria-label="Projects"
+          className="grid gap-5 md:grid-cols-2"
+        >
+          {projects.map((project) => {
+            const progress =
+              project.task_count === 0
+                ? 0
+                : Math.round((project.done_count / project.task_count) * 100);
+
+            return (
+              <article
+                className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                key={project.id}
+              >
+                <div
+                  aria-hidden="true"
+                  className="h-2"
+                  style={{ backgroundColor: project.color }}
+                />
+                <div className="p-6">
+                  <h2 className="text-xl font-semibold tracking-tight text-zinc-950">
+                    <Link
+                      className="rounded-sm hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      href={`/projects/${project.id}`}
+                    >
+                      {project.name}
+                    </Link>
+                  </h2>
+                  <p className="mt-2 min-h-12 text-sm leading-6 text-zinc-600">
+                    {project.description || "No description provided."}
+                  </p>
+                  <div className="mt-6 flex items-center justify-between gap-4 text-sm">
+                    <span className="font-medium text-zinc-700">
+                      Progress
+                    </span>
+                    <span className="tabular-nums text-zinc-600">
+                      {project.done_count}/{project.task_count} tasks
+                    </span>
+                  </div>
+                  <div
+                    aria-label={`${progress}% complete`}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={progress}
+                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-zinc-100"
+                    role="progressbar"
+                  >
+                    <div
+                      className="h-full rounded-full bg-indigo-600 transition-[width]"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      <section className="mt-10">
+        <ProjectForm />
       </section>
     </main>
   );
